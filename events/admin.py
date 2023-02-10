@@ -1,5 +1,5 @@
-from django.contrib import admin
-from .models import Event,Participation 
+from django.contrib import admin, messages
+from .models import Event, Participation
 # Register your models here.
 
 
@@ -10,36 +10,57 @@ class ParticipationInline(admin.StackedInline):
     can_delete = True
     readonly_fields = ('datePart',)
 
-def set_state(ModelAdmin , request , queryset): 
-    rows = queryset.update(state = True)
+
+def set_state(ModelAdmin, request, queryset):
+    rows = queryset.update(state=True)
+    if (rows == 1):
+        msg = "One event was "
+    else:
+        msg = f"{rows} events were "
+    messages.success(request, message='%s successfully accepted' % msg)
+
+
 set_state.short_description = "Accept"
 
+
 class EventAdmin(admin.ModelAdmin):
-    actions = [set_state]
+    def unset_state(self, request, queryset):
+        rows_filter = queryset.filter(state=False)
+        if rows_filter.count() > 0:
+            messages.error(
+                request, message=f"{rows_filter.count()} are already refused")
+        else:
+            rows = queryset.update(state=False)
+            if (rows == 1):
+                msg = "One event was"
+            else:
+                msg = f"{rows} events were"
+            messages.success(request, message='%s successfully accepted' % msg)
+
+    actions = [set_state , unset_state]
     inlines = [
         ParticipationInline
     ]
-    
-    list_per_page = 20  
-    
-    list_display =(
+
+    list_per_page = 20
+
+    list_display = (
         'title',
         'category',
         'state',
     )
-    list_filter=(
+    list_filter = (
         'category',
         'state',
     )
     ordering = ('title',)
-    search_fields=[
+    search_fields = [
         'title',
         'category'
     ]
-    readonly_fields=('createdAt','updatedAt')
+    readonly_fields = ('createdAt', 'updatedAt')
 
-
-    autocomplete_fields= ['organize']   
+    autocomplete_fields = ['organize']
 
     fieldsets = (
         (
@@ -56,7 +77,7 @@ class EventAdmin(admin.ModelAdmin):
                     'title',
                     'imageEvent',
                     'category',
-                    'organize',   
+                    'organize',
                     'nombreParticipants',
                     'description',
                 ),
@@ -74,5 +95,7 @@ class EventAdmin(admin.ModelAdmin):
             }
         ),
     )
-admin.site.register(Event,EventAdmin)
+
+
+admin.site.register(Event, EventAdmin)
 admin.site.register(Participation)

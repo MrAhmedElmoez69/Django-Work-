@@ -1,22 +1,42 @@
 from django.contrib import admin
 from .models import Event,Participation 
 # Register your models here.
+
+
+class ParticipationInline(admin.StackedInline):
+    model = Participation
+    extra = 1
+    classes = ['collapse']
+    can_delete = True
+    readonly_fields = ('datePart',)
+
+def set_state(ModelAdmin , request , queryset): 
+    rows = queryset.update(state = True)
+set_state.short_description = "Accept"
+
 class EventAdmin(admin.ModelAdmin):
+    actions = [set_state]
+    inlines = [
+        ParticipationInline
+    ]
+    
+    list_per_page = 20  
+    
     list_display =(
-        'Title',
-        'Category',
-        'State',
+        'title',
+        'category',
+        'state',
     )
     list_filter=(
-        'Category',
-        'State',
+        'category',
+        'state',
     )
-    ordering = ('Title',)
+    ordering = ('title',)
     search_fields=[
-        'Title',
-        'Category'
+        'title',
+        'category'
     ]
-    readonly_fields=('CreatedAt','UpdatedAt')
+    readonly_fields=('createdAt','updatedAt')
 
 
     autocomplete_fields= ['organize']   
@@ -25,7 +45,7 @@ class EventAdmin(admin.ModelAdmin):
         (
             'State',
             {
-                'fields': ('State',)
+                'fields': ('state',)
             }
         ),
         (
@@ -33,12 +53,12 @@ class EventAdmin(admin.ModelAdmin):
             {
                 'classes': ('collapse',),
                 'fields': (
-                    'Title',
-                    'ImageEvent',
-                    'Category',
+                    'title',
+                    'imageEvent',
+                    'category',
                     'organize',   
-                    'NombreParticipants',
-                    'Description',
+                    'nombreParticipants',
+                    'description',
                 ),
             }
         ),
@@ -47,8 +67,8 @@ class EventAdmin(admin.ModelAdmin):
             {
                 'fields': (
                     (
-                        'DateEvent',
-                        'CreatedAt',
+                        'dateEvent',
+                        'createdAt',
                     ),
                 )
             }

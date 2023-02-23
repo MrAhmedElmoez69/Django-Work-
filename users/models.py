@@ -13,6 +13,3 @@ class Person(AbstractUser):
     CIN =models.CharField("CIN",max_length=250,validators= [RegexValidator(regex='^[0-9]{8}$',message="Numbers Only !")])
 
     email =models.EmailField("Email",help_text='xx@yy.tn',unique=True,validators=[is_email_esprit])
-
-
-events = models.ManyToManyField('events.event', related_name='participants')

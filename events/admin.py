@@ -1,6 +1,25 @@
 from django.contrib import admin, messages
 from .models import Event, Participation
+from django.utils import timezone
+
 # Register your models here.
+
+
+class ParticipantFilter(admin.SimpleListFilter):
+    title = 'Participants'
+    parameter_name = 'nombreParticipants'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('0', ('No Participants')),
+            ('more', ('There are Participants'))
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == '0':
+            return queryset.filter(nombreParticipants__exact=0)
+        if self.value() == 'more':
+            return queryset.filter(nombreParticipants__gt=0)
 
 
 class ParticipationInline(admin.StackedInline):
@@ -23,6 +42,28 @@ def set_state(ModelAdmin, request, queryset):
 set_state.short_description = "Accept"
 
 
+class EventDateFilter(admin.SimpleListFilter):
+    title = 'Date'
+    parameter_name = 'dateEvent'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('today', ('Today')),
+            ('future', ('Future')),
+            ('past', ('Past')),
+        )
+
+    def queryset(self, request, queryset):
+        today = timezone.now().date()
+        if self.value() == 'today':
+            return queryset.filter(dateEvent=today)
+        if self.value() == 'future':
+            return queryset.filter(dateEvent__gt=today)
+        if self.value() == 'past':
+            return queryset.filter(dateEvent__lt=today)
+
+
+
 class EventAdmin(admin.ModelAdmin):
     def unset_state(self, request, queryset):
         rows_filter = queryset.filter(state=False)
@@ -37,7 +78,10 @@ class EventAdmin(admin.ModelAdmin):
                 msg = f"{rows} events were"
             messages.success(request, message='%s successfully accepted' % msg)
 
-    actions = [set_state , unset_state]
+    unset_state.short_description = "Refuse"
+    actions = [set_state, "unset_state", "queryset"]
+    actions_on_bottom = True
+    actions_on_top = False
     inlines = [
         ParticipationInline
     ]
@@ -50,6 +94,8 @@ class EventAdmin(admin.ModelAdmin):
         'state',
     )
     list_filter = (
+        ParticipantFilter,
+        EventDateFilter,
         'category',
         'state',
     )
